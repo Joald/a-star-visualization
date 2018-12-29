@@ -71,48 +71,37 @@ void FieldSelector::visitNext() {
         finished = true;
         markPath();
     }
-    switch (algorithm) {
-        case UNSPECIFIED:
-            break;
-        case DIJKSTRA: {
-            int weight, x, y;
-            std::tie(weight, x, y) = dijkstra.top();
-            dijkstra.pop();
-            if (matrix[x][y] == Field::VISITED) {
-                return;
-            }
-            matrix[x][y] = Field::VISITED;
-            weight++;
-            auto visit = [&](int vx, int vy) {
-                if (canVisit(vx, vy, weight)) {
-                    prevs[vx][vy] = {x, y};
-                    dijkstra.emplace(weight, vx, vy);
-                    weights[vx][vy] = weight;
-                    matrix[vx][vy] = Field::ENQUEUED;
-                    if (vx == targetX and vy == targetY) {
-                        finished = true;
-                        std::clog << "Target found!" << std::endl;
-                        markPath();
-                    }
-                }
-            };
-            visit(x + 1, y);
-            visit(x - 1, y);
-            visit(x, y + 1);
-            visit(x, y - 1);
-            if (dijkstra.empty()) {
+    int x, y;
+    std::tie(x, y) = q.top();
+    q.pop();
+    if (matrix[x][y] == Field::VISITED) {
+        return;
+    }
+    matrix[x][y] = Field::VISITED;
+    auto weight = weights[x][y] + 1;
+    auto visit = [&](int vx, int vy) {
+        if (canVisit(vx, vy, weight)) {
+            prevs[vx][vy] = {x, y};
+            weights[vx][vy] = weight;
+            q.emplace(vx, vy);
+            std::clog << "Pushing (" << vx << ", " << vy << ") with weight " << getWeight(vx, vy) << "\n";
+            matrix[vx][vy] = Field::ENQUEUED;
+            if (vx == targetX and vy == targetY) {
                 finished = true;
-                std::clog << "Queue empty!" << std::endl;
+                std::clog << "Target found!" << std::endl;
+                markPath();
             }
         }
-            break;
-        case A_STAR:
-            break;
-        case A_STAR_PREFER_COST:
-            break;
-        case A_STAR_PREFER_HEURISTIC:
-            break;
+    };
+    visit(x + 1, y);
+    visit(x - 1, y);
+    visit(x, y + 1);
+    visit(x, y - 1);
+    if (q.empty()) {
+        finished = true;
+        std::clog << "Queue empty!" << std::endl;
     }
+
 }
 
 FieldSelector::FieldSelector(Algorithm algorithm, FieldMatrix& matrix)
@@ -121,26 +110,9 @@ FieldSelector::FieldSelector(Algorithm algorithm, FieldMatrix& matrix)
         prevs[i].resize(matrix[i].size(), {-1, -1});
         weights[i].resize(matrix[i].size(), std::numeric_limits<weight>::max());
     }
-    switch (algorithm) {
-        case UNSPECIFIED:
-            break;
-        case DIJKSTRA: {
-            std::tie(startX, startY, targetX, targetY) = findEnds(matrix);
-            dijkstra.emplace(0, startX, startY);
-            weights[startX][startY] = 0;
-            break;
-        }
-        case A_STAR:{
-            std::tie(startX, startY, targetX, targetY) = findEnds(matrix);
-            dijkstra.emplace(distance(startX, startY), startX, startY);
-            weights[startX][startY] = 0;
-            break;
-        }
-        case A_STAR_PREFER_COST:
-            break;
-        case A_STAR_PREFER_HEURISTIC:
-            break;
-    }
+    std::tie(startX, startY, targetX, targetY) = findEnds(matrix);
+    weights[startX][startY] = 0;
+    q.emplace(startX, startY);
 }
 
 void FieldSelector::markPath() {

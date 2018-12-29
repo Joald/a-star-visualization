@@ -9,7 +9,7 @@
 
 
 enum Algorithm {
-    UNSPECIFIED, DIJKSTRA, A_STAR, A_STAR_PREFER_COST, A_STAR_PREFER_HEURISTIC
+    UNSPECIFIED, DIJKSTRA, A_STAR, A_STAR_SQUARE_DISTANCE, A_STAR_MANHATTAN
 };
 
 enum Field {
@@ -25,30 +25,41 @@ Converter& getConverter();
 FieldMatrix load_fields();
 
 
+template<class T>
+struct comparator {
+    using type = std::function<bool(const T&, const T&)>;
+};
+
+template<class T>
+using comparator_t = typename comparator<T>::type;
+
 class FieldSelector {
-    using weight = float;
+    using weight = double;
 
     Algorithm algorithm;
     FieldMatrix& matrix;
     std::vector<std::vector<std::pair<int, int>>> prevs;
-    std::vector<std::vector<float>> weights;
+    std::vector<std::vector<weight>> weights;
 
+    using queue_t = std::pair<int, int>;
+    comparator_t<queue_t> queue_cmp = [&](const queue_t& lhs, const queue_t& rhs) {
+        auto[lx, ly] = lhs;
+        auto[rx, ry] = rhs;
+        return std::make_tuple(getWeight(lx, ly), lx, ly) > std::make_tuple(getWeight(rx, ry), rx, ry);
+    };
+    std::priority_queue<queue_t, std::vector<queue_t>, decltype(queue_cmp)> q{queue_cmp};
 
-    // weight, x, y
-    using dijkstra_t = std::tuple<weight, int, int>;
-    std::priority_queue<dijkstra_t, std::vector<dijkstra_t>, std::greater<>> dijkstra;
-    
     bool finished;
 
     int startX, startY, targetX, targetY;
 
-    weight distance(int x, int y) {
-        float dx = targetX - x;
-        float dy = targetY - y;
+    weight distance(int x, int y) const {
+        weight dx = targetX - x;
+        weight dy = targetY - y;
         return std::sqrt(dx * dx + dy * dy);
     }
 
-    bool canVisit(int x, int y, weight w) {
+    bool canVisit(int x, int y, weight w) const {
         return !(x < 0 or matrix.size() <= x or
                  y < 0 or matrix[x].size() <= y or
                  matrix[x][y] == Field::BLOCKING or
@@ -68,6 +79,18 @@ public:
     }
 
     weight getWeight(int x, int y) const {
-        return weights[x][y];
+        switch (algorithm) {
+            case DIJKSTRA:
+                return weights[x][y];
+            case A_STAR:
+                return weights[x][y] + distance(x, y);
+            case A_STAR_SQUARE_DISTANCE:
+                return weights[x][y] + distance(x, y) * distance(x, y);
+            case A_STAR_MANHATTAN:
+                return weights[x][y] + std::abs(x - targetX) + std::abs(y - targetY);
+            case UNSPECIFIED:
+                throw std::invalid_argument("Algorithm unsupported.");
+        }
+        return -1;
     }
 };

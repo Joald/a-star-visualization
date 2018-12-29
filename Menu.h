@@ -7,8 +7,6 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
-
-
 class Menu {
     using MenuAction = std::function<void()>;
     using Option = std::pair<std::string, MenuAction>;

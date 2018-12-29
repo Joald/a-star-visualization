@@ -18,7 +18,7 @@ void Menu::updateOptions() {
         text.setFont(arial());
         text.setString(std::to_string(i + 1) + ". " + textString);
         text.setCharacterSize(static_cast<unsigned int>(scaleY(FONT_SIZE)));
-        text.setPosition(scale(sf::Vector2f(1.f / 3.f, 1.f / 5.f + i * 3.f * FONT_SIZE)));
+        text.setPosition(scale(sf::Vector2f(1.f / 5.f, 1.f / 5.f + i * 3.f * FONT_SIZE)));
         std::clog << "Text " << i << " position is (" << text.getPosition().x << ", " << text.getPosition().y << ")" << std::endl;
         std::clog << "Text " << i << " character size is " << text.getCharacterSize() << std::endl;
         text.setFillColor(sf::Color::Black);

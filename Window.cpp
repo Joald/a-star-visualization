@@ -10,14 +10,14 @@ float scaleX(float x) {
     if (x < 0 or 1 < x) {
         throw std::invalid_argument("Window positions must be between 0 and 1");
     }
-    return x * window().getSize().x;
+    return x * sf::VideoMode::getDesktopMode().width;
 }
 
 float scaleY(float y) {
     if (y < 0 or 1 < y) {
         throw std::invalid_argument("Window positions must be between 0 and 1");
     }
-    return y * window().getSize().y;
+    return y * sf::VideoMode::getDesktopMode().height;
 }
 
 sf::Vector2f scale(sf::Vector2f toScale) {
